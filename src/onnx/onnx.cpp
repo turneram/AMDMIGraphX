@@ -1338,8 +1338,8 @@ struct onnx_parser
     parse_instancenorm(const std::string&, node_info info, std::vector<instruction_ref> args)
     {
         // y = scale * ( x - mean ) / sqrt ( variance + epsilon ) + bias
-        // mean = reduce_mean({H, W}, x)
-        // variance = reduce_mean({H, W}, (x - mean)^2)
+        // mean = reduce_mean({D1, D2, ... Dk}, x)
+        // variance = reduce_mean({D1, D2, ... Dk}, (x - mean)^2)
 
         float epsilon = 1e-5f;
         if(contains(info.attributes, "epsilon"))
@@ -1350,6 +1350,8 @@ struct onnx_parser
         auto scale = args[1];
         auto bias  = args[2];
         auto dims  = x->get_shape().lens();
+        auto ndims = dims.size();
+        assert(ndims >= 2);
 
         auto mean            = prog.add_instruction(make_op("reduce_mean", {{"axes", {2, 3}}}), x);
         auto mean_bcast      = prog.add_instruction(op::multibroadcast{dims}, mean);
