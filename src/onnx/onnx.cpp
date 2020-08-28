@@ -1352,11 +1352,15 @@ struct onnx_parser
         auto dims  = x->get_shape().lens();
         auto ndims = dims.size();
         assert(ndims >= 2);
+        auto kdims = ndims - 2;
 
-        auto mean            = prog.add_instruction(make_op("reduce_mean", {{"axes", {2, 3}}}), x);
+        std::vector<int64_t> axes(kdims);
+        std::iota(axes.begin(), axes.end(), 2);
+
+        auto mean            = prog.add_instruction(make_op("reduce_mean", {{"axes", axes}}), x);
         auto mean_bcast      = prog.add_instruction(op::multibroadcast{dims}, mean);
         auto l0              = prog.add_instruction(make_op("sqdiff"), x, mean_bcast);
-        auto variance        = prog.add_instruction(make_op("reduce_mean", {{"axes", {2, 3}}}), l0);
+        auto variance        = prog.add_instruction(make_op("reduce_mean", {{"axes", axes}}), l0);
         auto l1              = prog.add_instruction(make_op("sub"), x, mean_bcast);
         auto epsilon_literal = prog.add_literal(epsilon);
         auto epsilon_bcast   = prog.add_instruction(op::multibroadcast{dims}, epsilon_literal);
